@@ -1,0 +1,3 @@
+[submodule "examples/deception_under_pressure/insider-trading"]
+	path = examples/deception_under_pressure/insider-trading
+	url = https://github.com/apolloresearch/insider-trading
