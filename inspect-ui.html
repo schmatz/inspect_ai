@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inspect AI Dashboard</title>
+    <style>
+        :root {
+            --bg-primary: #1e1e2e;
+            --bg-secondary: #282838;
+            --text-primary: #d9e0ee;
+            --text-secondary: #a6adc8;
+            --accent: #f5c2e7;
+            --success: #a6e3a1;
+            --warning: #f9e2af;
+            --error: #f38ba8;
+            --card-bg: #303046;
+            --card-border: #45455d;
+            --progress-bg: #45455d;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            padding: 1.5rem;
+            background-color: var(--bg-secondary);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo-icon {
+            color: var(--accent);
+            font-size: 1.8rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .server-status {
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            background-color: var(--bg-primary);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background-color: var(--error);
+            transition: background-color 0.3s ease;
+        }
+        
+        .status-dot.connected {
+            background-color: var(--success);
+        }
+
+        button {
+            background-color: var(--card-bg);
+            color: var(--text-primary);
+            border: none;
+            padding: 0.5rem 1rem;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            border: 1px solid transparent;
+        }
+
+        button:hover {
+            border-color: var(--accent);
+        }
+
+        .server-input {
+            background-color: var(--bg-primary);
+            color: var(--text-primary);
+            border: 1px solid var(--card-border);
+            padding: 0.5rem;
+            border-radius: 4px;
+            width: 240px;
+        }
+
+        main {
+            flex: 1;
+            padding: 1.5rem;
+            max-width: 1400px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .task-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 1.5rem;
+            margin-top: 1.5rem;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            overflow: hidden;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 14px rgba(0, 0, 0, 0.15);
+        }
+
+        .card-header {
+            padding: 1rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--card-border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .card-title {
+            font-weight: 600;
+            font-size: 1.1rem;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .badge {
+            background-color: var(--accent);
+            color: var(--bg-primary);
+            padding: 0.25rem 0.5rem;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 600;
+        }
+
+        .card-body {
+            padding: 1rem;
+        }
+
+        .stat-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 0.75rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-item {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.2rem;
+        }
+
+        .stat-value {
+            font-weight: 600;
+            font-size: 1.1rem;
+        }
+
+        .progress-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 0.5rem;
+        }
+
+        .progress-title {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .progress-percent {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .progress-bar {
+            height: 8px;
+            width: 100%;
+            background-color: var(--progress-bg);
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 1rem;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background-color: var(--accent);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+        }
+
+        .metrics-section {
+            margin-top: 1rem;
+        }
+
+        .metrics-title {
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+            margin-bottom: 0.75rem;
+        }
+
+        .metrics-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .metric-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem;
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 4px;
+        }
+
+        .metric-name {
+            font-size: 0.9rem;
+        }
+
+        .metric-value {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .task-details {
+            background-color: var(--card-bg);
+            border-radius: 8px;
+            border: 1px solid var(--card-border);
+            margin-top: 1.5rem;
+            overflow: hidden;
+            display: none;
+        }
+
+        .detail-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid var(--card-border);
+        }
+
+        .detail-body {
+            padding: 1.5rem;
+        }
+
+        .profile-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .result-section {
+            margin-top: 1.5rem;
+        }
+
+        .result-title {
+            margin-bottom: 0.75rem;
+            font-size: 1.1rem;
+        }
+
+        pre {
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 1rem;
+            border-radius: 4px;
+            overflow: auto;
+            font-family: monospace;
+            max-height: 300px;
+        }
+
+        .empty-state {
+            height: 300px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-secondary);
+            text-align: center;
+        }
+
+        .empty-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        .empty-title {
+            font-size: 1.2rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .empty-text {
+            max-width: 400px;
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                opacity: 0.6;
+            }
+            50% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.6;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">
+            <span class="logo-icon">⚡</span>
+            <span>Inspect AI Dashboard</span>
+        </div>
+        <div class="controls">
+            <input type="text" id="server-url" class="server-input" value="http://127.0.0.1:7474" placeholder="Server URL">
+            <button id="connect-btn">Connect</button>
+            <div class="server-status">
+                <span class="status-dot" id="status-indicator"></span>
+                <span id="status-text">Disconnected</span>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div id="task-detail-view" class="task-details">
+            <div class="detail-header">
+                <h2 id="detail-title">Task Details</h2>
+                <button id="close-detail-btn">Close</button>
+            </div>
+            <div class="detail-body" id="detail-content">
+                <!-- Task details will be displayed here -->
+            </div>
+        </div>
+
+        <div class="task-grid" id="task-container">
+            <div class="empty-state" id="empty-state">
+                <div class="empty-icon">📊</div>
+                <h3 class="empty-title">No tasks found</h3>
+                <p class="empty-text">Connect to an Inspect AI server or run a task with the HTTP display mode to see task data here.</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // State management
+        const state = {
+            serverUrl: 'http://127.0.0.1:7474',
+            connected: false,
+            polling: null,
+            tasks: {},
+            selectedTaskId: null
+        };
+
+        // DOM elements
+        const serverUrlInput = document.getElementById('server-url');
+        const connectBtn = document.getElementById('connect-btn');
+        const statusIndicator = document.getElementById('status-indicator');
+        const statusText = document.getElementById('status-text');
+        const taskContainer = document.getElementById('task-container');
+        const emptyState = document.getElementById('empty-state');
+        const taskDetailView = document.getElementById('task-detail-view');
+        const detailTitle = document.getElementById('detail-title');
+        const detailContent = document.getElementById('detail-content');
+        const closeDetailBtn = document.getElementById('close-detail-btn');
+
+        // Event listeners
+        connectBtn.addEventListener('click', toggleConnection);
+        serverUrlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') toggleConnection();
+        });
+        closeDetailBtn.addEventListener('click', closeTaskDetails);
+
+        // Initialize
+        init();
+
+        function init() {
+            // Load saved server URL from localStorage if available
+            const savedUrl = localStorage.getItem('inspectServerUrl');
+            if (savedUrl) {
+                state.serverUrl = savedUrl;
+                serverUrlInput.value = savedUrl;
+            }
+            
+            // Try to connect automatically
+            connect();
+        }
+
+        function toggleConnection() {
+            if (state.connected) {
+                disconnect();
+            } else {
+                state.serverUrl = serverUrlInput.value.trim();
+                localStorage.setItem('inspectServerUrl', state.serverUrl);
+                connect();
+            }
+        }
+
+        function connect() {
+            setConnectionStatus('connecting');
+            
+            // Try to fetch tasks from the server
+            fetchTasks()
+                .then(() => {
+                    // If successful, start polling
+                    setConnectionStatus('connected');
+                    startPolling();
+                })
+                .catch(error => {
+                    console.error('Connection error:', error);
+                    setConnectionStatus('disconnected');
+                });
+        }
+
+        function disconnect() {
+            stopPolling();
+            setConnectionStatus('disconnected');
+        }
+
+        function setConnectionStatus(status) {
+            switch (status) {
+                case 'connected':
+                    statusIndicator.className = 'status-dot connected';
+                    statusText.textContent = 'Connected';
+                    connectBtn.textContent = 'Disconnect';
+                    state.connected = true;
+                    break;
+                
+                case 'connecting':
+                    statusIndicator.className = 'status-dot pulse';
+                    statusText.textContent = 'Connecting...';
+                    connectBtn.textContent = 'Cancel';
+                    state.connected = false;
+                    break;
+                
+                case 'disconnected':
+                default:
+                    statusIndicator.className = 'status-dot';
+                    statusText.textContent = 'Disconnected';
+                    connectBtn.textContent = 'Connect';
+                    state.connected = false;
+                    break;
+            }
+        }
+
+        function startPolling() {
+            // Clear any existing polling
+            stopPolling();
+            
+            // Start a new polling interval
+            state.polling = setInterval(() => {
+                fetchTasks()
+                    .catch(error => {
+                        console.error('Polling error:', error);
+                        disconnect();
+                    });
+                
+                // If we have a selected task, update its details
+                if (state.selectedTaskId) {
+                    fetchTaskDetails(state.selectedTaskId);
+                }
+            }, 1000); // Poll every second
+        }
+
+        function stopPolling() {
+            if (state.polling) {
+                clearInterval(state.polling);
+                state.polling = null;
+            }
+        }
+
+        async function fetchTasks() {
+            try {
+                const response = await fetch(`${state.serverUrl}/tasks`);
+                if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                
+                const tasks = await response.json();
+                
+                // Update our tasks state
+                const oldTaskIds = Object.keys(state.tasks);
+                const newTaskIds = tasks.map(task => task.task_id);
+                
+                // Update existing tasks and add new ones
+                tasks.forEach(task => {
+                    state.tasks[task.task_id] = task;
+                });
+                
+                // Remove tasks that no longer exist
+                oldTaskIds.forEach(taskId => {
+                    if (!newTaskIds.includes(taskId)) {
+                        delete state.tasks[taskId];
+                    }
+                });
+                
+                // Render the updated tasks
+                renderTasks();
+                
+                return tasks;
+            } catch (error) {
+                console.error('Error fetching tasks:', error);
+                throw error;
+            }
+        }
+
+        async function fetchTaskDetails(taskId) {
+            try {
+                const response = await fetch(`${state.serverUrl}/tasks/${taskId}`);
+                if (!response.ok) throw new Error(`HTTP error: ${response.status}`);
+                
+                const taskDetail = await response.json();
+                
+                // Update the task in our state
+                state.tasks[taskId] = taskDetail;
+                
+                // If this is the currently selected task, update the detail view
+                if (state.selectedTaskId === taskId) {
+                    renderTaskDetails(taskDetail);
+                }
+                
+                // Also update the task card
+                renderTasks();
+                
+                return taskDetail;
+            } catch (error) {
+                console.error(`Error fetching task ${taskId} details:`, error);
+                throw error;
+            }
+        }
+
+        function renderTasks() {
+            const tasks = Object.values(state.tasks);
+            
+            // Show/hide empty state
+            if (tasks.length === 0) {
+                emptyState.style.display = 'flex';
+                taskContainer.innerHTML = '';
+                emptyState.parentNode.appendChild(emptyState);
+            } else {
+                emptyState.style.display = 'none';
+                
+                // Create a document fragment to batch DOM updates
+                const fragment = document.createDocumentFragment();
+                
+                // Render each task
+                tasks.forEach(task => {
+                    // Check if the task card already exists
+                    let taskCard = document.getElementById(`task-card-${task.task_id}`);
+                    
+                    if (!taskCard) {
+                        // Create a new card if it doesn't exist
+                        taskCard = document.createElement('div');
+                        taskCard.className = 'card';
+                        taskCard.id = `task-card-${task.task_id}`;
+                        taskCard.addEventListener('click', () => openTaskDetails(task.task_id));
+                    }
+                    
+                    // Update the card content
+                    taskCard.innerHTML = generateTaskCardHTML(task);
+                    
+                    // Add to fragment
+                    fragment.appendChild(taskCard);
+                });
+                
+                // Replace all task cards with the new ones
+                taskContainer.innerHTML = '';
+                taskContainer.appendChild(fragment);
+            }
+        }
+
+        function generateTaskCardHTML(task) {
+            const { profile, progress, samples_complete, samples_total, metrics, result } = task;
+            
+            const taskName = profile.name || 'Unnamed Task';
+            const taskStatus = result ? 'Complete' : 'Running';
+            const statusClass = result ? 'success' : 'accent';
+            
+            // Calculate progress percentages
+            const stepProgress = progress ? Math.round((progress.current / progress.total) * 100) : 0;
+            const sampleProgress = samples_total ? Math.round((samples_complete / samples_total) * 100) : 0;
+            
+            // Generate metrics HTML
+            let metricsHTML = '';
+            if (metrics && metrics.length > 0) {
+                metricsHTML = `
+                    <div class="metrics-section">
+                        <div class="metrics-title">Metrics</div>
+                        <div class="metrics-list">
+                            ${metrics.map(metric => `
+                                <div class="metric-item">
+                                    <span class="metric-name">${metric.scorer}.${metric.name}</span>
+                                    <span class="metric-value">${formatValue(metric.value)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="card-header">
+                    <div class="card-title">${taskName}</div>
+                    <div class="badge" style="background-color: var(--${statusClass})">${taskStatus}</div>
+                </div>
+                <div class="card-body">
+                    <div class="stat-grid">
+                        <div class="stat-item">
+                            <div class="stat-label">Model</div>
+                            <div class="stat-value">${profile.model || 'N/A'}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Samples</div>
+                            <div class="stat-value">${samples_complete} / ${samples_total}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Dataset</div>
+                            <div class="stat-value">${profile.dataset || 'N/A'}</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-label">Scorer</div>
+                            <div class="stat-value">${profile.scorer || 'N/A'}</div>
+                        </div>
+                    </div>
+                    
+                    <div class="progress-header">
+                        <div class="progress-title">Steps</div>
+                        <div class="progress-percent">${stepProgress}%</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${stepProgress}%"></div>
+                    </div>
+                    
+                    <div class="progress-header">
+                        <div class="progress-title">Samples</div>
+                        <div class="progress-percent">${sampleProgress}%</div>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: ${sampleProgress}%"></div>
+                    </div>
+                    
+                    ${metricsHTML}
+                </div>
+            `;
+        }
+
+        function openTaskDetails(taskId) {
+            state.selectedTaskId = taskId;
+            const task = state.tasks[taskId];
+            
+            if (task) {
+                // Render the task details
+                renderTaskDetails(task);
+                
+                // Show the detail view
+                taskDetailView.style.display = 'block';
+                
+                // Scroll to the details
+                taskDetailView.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        function renderTaskDetails(task) {
+            const { profile, progress, samples_complete, samples_total, metrics, result } = task;
+            
+            // Set the title
+            detailTitle.textContent = `Task: ${profile.name || 'Unnamed Task'}`;
+            
+            // Generate profile HTML
+            let profileHTML = '<div class="profile-grid">';
+            const profileItems = [
+                { label: 'Task ID', value: task.task_id },
+                { label: 'Model', value: profile.model },
+                { label: 'Dataset', value: profile.dataset },
+                { label: 'Scorer', value: profile.scorer },
+                { label: 'File', value: profile.file },
+                { label: 'Total Samples', value: profile.samples },
+                { label: 'Total Steps', value: profile.steps },
+                { label: 'Log Location', value: profile.log_location },
+            ];
+            
+            profileItems.forEach(item => {
+                if (item.value) {
+                    profileHTML += `
+                        <div class="stat-item">
+                            <div class="stat-label">${item.label}</div>
+                            <div class="stat-value">${item.value}</div>
+                        </div>
+                    `;
+                }
+            });
+            profileHTML += '</div>';
+            
+            // Generate progress HTML
+            const stepProgress = progress ? Math.round((progress.current / progress.total) * 100) : 0;
+            const sampleProgress = samples_total ? Math.round((samples_complete / samples_total) * 100) : 0;
+            
+            const progressHTML = `
+                <div class="progress-header">
+                    <div class="progress-title">Steps Progress (${progress?.current || 0}/${progress?.total || 0})</div>
+                    <div class="progress-percent">${stepProgress}%</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${stepProgress}%"></div>
+                </div>
+                
+                <div class="progress-header">
+                    <div class="progress-title">Samples Progress (${samples_complete}/${samples_total})</div>
+                    <div class="progress-percent">${sampleProgress}%</div>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" style="width: ${sampleProgress}%"></div>
+                </div>
+            `;
+            
+            // Generate metrics HTML
+            let metricsHTML = '';
+            if (metrics && metrics.length > 0) {
+                metricsHTML = `
+                    <div class="metrics-section">
+                        <div class="metrics-title">Metrics</div>
+                        <div class="metrics-list">
+                            ${metrics.map(metric => `
+                                <div class="metric-item">
+                                    <span class="metric-name">${metric.scorer}.${metric.name} (${metric.reducer})</span>
+                                    <span class="metric-value">${formatValue(metric.value)}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `;
+            }
+            
+            // Generate result HTML
+            let resultHTML = '';
+            if (result) {
+                resultHTML = `
+                    <div class="result-section">
+                        <div class="result-title">Result</div>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            }
+            
+            // Combine all the sections
+            detailContent.innerHTML = `
+                <h3>Task Profile</h3>
+                ${profileHTML}
+                
+                <h3 style="margin-top: 1.5rem;">Progress</h3>
+                ${progressHTML}
+                
+                ${metricsHTML}
+                
+                ${resultHTML}
+            `;
+        }
+
+        function closeTaskDetails() {
+            taskDetailView.style.display = 'none';
+            state.selectedTaskId = null;
+        }
+
+        function formatValue(value) {
+            if (typeof value === 'number') {
+                // Format as percentage if it's between 0 and 1
+                if (value >= 0 && value <= 1) {
+                    return `${(value * 100).toFixed(2)}%`;
+                }
+                // Format with 2 decimal places for other numbers
+                return value.toFixed(2);
+            }
+            return value;
+        }
+    </script>
+</body>
+</html>

@@ -5,6 +5,7 @@ import rich
 
 from inspect_ai.util._display import display_type
 
+from ..http.display import HttpDisplay
 from ..plain.display import PlainDisplay
 from ..rich.display import RichDisplay
 from ..textual.display import TextualDisplay
@@ -16,10 +17,13 @@ _active_display: Display | None = None
 def display() -> Display:
     global _active_display
     if _active_display is None:
-        if display_type() == "plain":
+        display_mode = display_type()
+        if display_mode == "plain":
             _active_display = PlainDisplay()
+        elif display_mode == "http":
+            _active_display = HttpDisplay()
         elif (
-            display_type() == "full"
+            display_mode == "full"
             and sys.stdout.isatty()
             and not rich.get_console().is_jupyter
         ):

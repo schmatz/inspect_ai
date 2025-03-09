@@ -16,7 +16,7 @@ from inspect_ai.util._display import init_display_type
 class CommonOptions(TypedDict):
     log_level: str
     log_dir: str
-    display: Literal["full", "conversation", "rich", "plain", "none"]
+    display: Literal["full", "conversation", "rich", "plain", "http", "none"]
     no_ansi: bool | None
     debug: bool
     debug_port: int
@@ -54,7 +54,7 @@ def common_options(func: Callable[..., Any]) -> Callable[..., click.Context]:
     @click.option(
         "--display",
         type=click.Choice(
-            ["full", "conversation", "rich", "plain", "none"], case_sensitive=False
+            ["full", "conversation", "rich", "plain", "http", "none"], case_sensitive=False
         ),
         default=DEFAULT_DISPLAY,
         envvar="INSPECT_DISPLAY",
